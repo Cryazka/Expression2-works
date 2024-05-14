@@ -1,0 +1,83 @@
+@name Portable HoloMap By Cryazka
+@inputs
+@outputs
+@persist 
+@trigger 
+@strict
+
+#entity():setColor(vec4(0,0,0,0))
+
+const HoloPlayersScale = vec(0.07,0.07,0.02)
+const HoloPlayersEyeScale = vec(0.01,0.04,0.08)
+const HoloPlayersEyePos = vec(0, 0, 0.6)
+const HoloPlayersEyeAng = ang(0, 90, 90)
+
+const Map = 0
+
+function reCountPlayers()
+{
+    holoCreate(Map, owner():pos() + vec(20, 40, 27), vec(2.5,2.5,0.0001), ang(), vec4(0,0,0,200), "cone")
+    holoDisableShading(Map,1)
+    
+    PlrsCntOnSpawn = players():count()
+    
+    HoloMapAxis = PlrsCntOnSpawn + 1
+    
+    holoCreate(HoloMapAxis, owner():pos(), vec(), ang(), vec4(0,255,0,255), "cylinder")
+    holoParent(Map, HoloMapAxis)
+    foreach (Index:number, Entity:entity = players())
+    {
+        if (Entity == owner())
+        {
+            HoloOwner = Index
+            continue
+        }
+        holoCreate(Index, vec(), HoloPlayersScale, ang(), vec4(0,150,0,255), "cylinder")
+        
+        holoCreate(Index + 10, HoloPlayersEyePos, HoloPlayersEyeScale, HoloPlayersEyeAng, vec4(255,30,0,255), "pyramid")
+        
+        holoParent(Index + 10, Index)
+        holoDisableShading(Index, 1)
+        holoDisableShading(Index + 10,1)
+    }
+    holoCreate(HoloOwner, vec(), HoloPlayersScale, ang(), vec4(0,0,255,255), "cylinder")
+    
+    holoCreate(HoloOwner + 10, HoloPlayersEyePos, HoloPlayersEyeScale, HoloPlayersEyeAng, vec4(255,255,0,255), "pyramid")
+    
+    holoParent(HoloOwner + 10, HoloOwner)
+    holoDisableShading(HoloOwner, 1)
+    holoDisableShading(HoloOwner + 10, 1)
+}
+
+
+T = 0
+
+event tick()
+{
+    
+    T = T + 1
+    
+    if (T == 6)
+    {
+        if (PlrsCntOnSpawn != players():count()) 
+        {
+            reCountPlayers()
+        }
+        
+        MapAng = ang(0, owner():eyeAngles():yaw(), 0)
+        
+        holoPos(HoloMapAxis, owner():pos())
+        holoAng(HoloMapAxis, MapAng + ang(0, 335, 0))
+        
+        
+        foreach (Index:number, Entity:entity = players())
+        {
+            local PlayerAng = ang(0, Entity:eyeAngles():yaw(), 0)
+            local PlayerPosOnMap = holoPos(Map) + vec(0, 0, 25) + Entity:pos() / 380
+            holoPos(Index, PlayerPosOnMap)
+            holoAng(Index, PlayerAng)
+        }
+        
+        T = 0
+    }
+}
